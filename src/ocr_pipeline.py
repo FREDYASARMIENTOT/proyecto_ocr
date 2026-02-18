@@ -2,16 +2,19 @@ import cv2
 import pytesseract
 import os
 
-# 1. PURGA INTERNA: Obligamos a Python a olvidar rutas viejas
-os.environ.pop('TESSDATA_PREFIX', None)
+import pytesseract
 
-# 2. CONFIGURACIÓN LIMPIA (Arquitectura 64 bits)
+import os
+import pytesseract
+
+# 1. Definimos la ruta base del motor
 ruta_base = r'C:\Program Files\Tesseract-OCR'
-# Usamos os.path.normpath para evitar el error de las comillas y barras mezcladas
-ruta_tessdata = os.path.normpath(os.path.join(ruta_base, 'tessdata'))
 
+# 2. Configuramos el ejecutable
 pytesseract.pytesseract.tesseract_cmd = os.path.join(ruta_base, 'tesseract.exe')
-os.environ['TESSDATA_PREFIX'] = ruta_tessdata
+
+# 3. Configuramos la ruta de los idiomas (TESSDATA) para evitar el error 'spa'
+os.environ['TESSDATA_PREFIX'] = os.path.join(ruta_base, 'tessdata')
 
 def preprocesar_imagen(ruta_imagen):
     """Mejora la imagen para el taller (Criterio: Calidad de resultados)"""
