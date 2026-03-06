@@ -1,6 +1,17 @@
-import cv2
-import pytesseract
 import os
+
+# ensure required packages are available and provide a helpful
+# error message if the wrong interpreter is used (e.g. conda base).
+try:
+    import cv2
+    import pytesseract
+except ImportError as exc:
+    missing = exc.name if hasattr(exc, 'name') else str(exc)
+    raise ImportError(
+        f"Error importing '{missing}'. "
+        "¿Está activado el entorno virtual correcto? "
+        "Ejecute 'pip install -r requirements.txt' en el venv."
+    ) from exc
 
 # 1. PURGA INTERNA: Obligamos a Python a olvidar rutas viejas
 os.environ.pop('TESSDATA_PREFIX', None)
@@ -32,3 +43,9 @@ def ejecutar_ocr(ruta_imagen, lenguaje='spa'):
         return texto.strip()
     except Exception as e:
         return f"Error crítico: {str(e)}"
+
+
+if __name__ == "__main__":
+    # informe sencillo cuando alguien intenta ejecutar este módulo directamente
+    print("Este módulo implementa la lógica OCR y no debe ejecutarse por sí mismo.")
+    print("Utilice 'python inferencia.py --imagen <ruta>' desde la raíz del proyecto.")

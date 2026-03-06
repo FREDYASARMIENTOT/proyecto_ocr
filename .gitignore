@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+
+# Entornos Virtuales
+D:/environments/
+
+# Tesseract temporales
+data/uploads/
+data/procesada_temp.jpg
+
+# OS
+.DS_Store
+Thumbs.db
