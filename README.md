@@ -1,41 +1,9 @@
-Pipeline de Extracción de Texto con Visión Artificial (OCR)Maestría en TIC - Aplicaciones de Aprendizaje AutomáticoUniversidad del Rosario1. IntroducciónEste proyecto implementa un sistema de Reconocimiento Óptico de Caracteres (OCR) robusto, diseñado para procesar imágenes con ruido o variaciones de iluminación. El sistema integra un pipeline de preprocesamiento avanzado utilizando la librería OpenCV y el motor de inferencia Tesseract OCR.El objetivo principal es transformar datos no estructurados (imágenes) en texto editable, garantizando alta precisión mediante la binarización adaptativa y la normalización de canales.2. Arquitectura del SistemaEl sistema se divide en tres capas funcionales:Capa de Visión (OpenCV): Encargada del filtrado, conversión a escala de grises y segmentación por umbralización.Motor de Inferencia (Tesseract): Wrapper de Python (pytesseract) que interactúa con el binario de Tesseract OCR para el reconocimiento de patrones.Capa de Interfaz (Inferencia CLI): Punto de entrada del usuario que gestiona argumentos por consola y visualización de resultados.3. Requisitos de Software (Stack Técnico)Para garantizar la reproducibilidad del proyecto, se deben cumplir los siguientes requisitos:Sistema Operativo: Windows 10/11 (Arquitectura de 64 bits recomendada).Lenguaje: Python 3.10 o superior.Librerías Python:opencv-python (Procesamiento de imagen).pytesseract (Wrapper de OCR).Pillow (Manejo de formatos de imagen).Motor Externo: Tesseract OCR v5.0+ (Instalación de 64 bits).4. Guía de Instalación Paso a PasoPaso 1: Clonación del RepositorioPowerShellgit clone https://github.com/FREDYASARMIENTOT/proyecto_ocr.git
-cd proyecto_ocr
-Paso 2: Instalación del Motor Tesseract (Crucial)Descargar el instalador de 64 bits desde el repositorio oficial de UB-Mannheim.Ejecutar el instalador y asegurar que la ruta de destino sea: C:\Program Files\Tesseract-OCR.Importante: Durante la instalación, desplegar el menú "Additional language data" y marcar Spanish para habilitar el soporte de caracteres especiales (ñ, tildes).Paso 3: Configuración del Entorno Virtual y Dependencias
-
-PowerShell
-# Crear entorno virtual
-python -m venv venv
-# Activar entorno (evite ejecutar con el intérprete de Anaconda/`conda base`)
-.\venv\Scripts\activate
-# Instalar librerías
-pip install -r requirements.txt
-
-> ⚠️ **Nota:** en Windows es fácil terminar usando el intérprete de `conda`
-> si éste está configurado como predeterminado. Asegúrese de activar el
-> `venv` antes de ejecutar los scripts para evitar errores de rutas y
-> versiones de Python discrepantes.
-5. Configuración de Variables de Entorno (Windows Fix)Debido a la gestión de rutas en Windows, el script de este proyecto incluye una lógica de "Sanitización de Rutas" para evitar errores de tipo (3221225477).El sistema configura automáticamente el TESSDATA_PREFIX dentro de la ejecución de Python para apuntar a:C:\Program Files\Tesseract-OCR\tessdata6. Lógica del Pipeline OCREl archivo src/ocr_pipeline.py implementa la siguiente secuencia de procesamiento:EtapaTécnicaPropósitoGrayscalecv2.COLOR_BGR2GRAYElimina información cromática innecesaria para reducir carga computacional.Binarizacióncv2.threshold + cv2.THRESH_OTSUSepara el texto del fondo mediante un umbral calculado estadísticamente.Inferenciaimage_to_stringEjecuta el motor Tesseract utilizando el modelo de lenguaje spa.7. Instrucciones de UsoPara procesar una imagen, utilice el script de inferencia proporcionando la ruta relativa del archivo de entrada. A partir de esta versión se incluye un envoltorio en la raíz del proyecto para que no sea necesario cambiar de carpeta:
-
-```powershell
-# desde la raíz del repositorio (recomendado)
-python inferencia.py --imagen data/nube_uni_bi.jpg
-
-# o bien, especificando la ruta completa al módulo interno
-python src/inferencia.py --imagen data/nube_uni_bi.jpg
-```
-
-> ⚠️ **Importante:** no intente ejecutar `src/ocr_pipeline.py` directamente. El
-> módulo sólo proporciona funciones auxiliares y requiere que las
-> dependencias estén instaladas en el entorno activo, de lo contrario verá
-> errores tipo `ModuleNotFoundError` (por ejemplo si está usando el intérprete
-> de Anaconda/`conda base`). Siempre arranque el CLI a través de
-> `inferencia.py` con el entorno virtual activado.
-
-8. Solución de Problemas (Troubleshooting)Error: Failed loading language 'spa'Causa: El archivo spa.traineddata no se encuentra en la subcarpeta tessdata.Solución: Descargar el archivo manualmente desde el repositorio oficial de Tesseract y pegarlo en C:\Program Files\Tesseract-OCR\tessdata.Error: (3221225477) o Violación de AccesoCausa: Conflicto entre arquitecturas (Python 64-bit vs Tesseract 32-bit).Solución: Desinstalar cualquier versión de Tesseract de C:\Program Files (x86) e instalar únicamente la de 64-bit en C:\Program Files.9. Estructura del ProyectoPlaintextproyecto_ocr/
-├── data/               # Imágenes de prueba (.jpg, .png)
+Pipeline de Extracción de Texto con Visión Artificial (OCR)Maestría en TIC - Aplicaciones de Aprendizaje AutomáticoUniversidad del Rosario👥 AutoresJorge BravoManuel CaroFredy Alejandro Sarmiento Torres1. IntroducciónEste proyecto implementa un sistema de Reconocimiento Óptico de Caracteres (OCR) de alta precisión, diseñado para procesar imágenes con ruido o variaciones de iluminación. El sistema integra un pipeline de preprocesamiento avanzado utilizando OpenCV (Filtros Gaussianos y Binarización de Otsu) y el motor de inferencia Tesseract OCR.El objetivo es transformar datos no estructurados en información editable y estructurada mediante una API moderna.🚀 2. Guía de Evaluación Rápida (Recomendado)Para facilitar la revisión y evitar errores de rutas en consola, hemos habilitado una interfaz web profesional. Recomendamos este método:Activar el entorno: .\venv\Scripts\activateLanzar el servidor: ```powershelluvicorn src.api:app --reloadAcceder a la Interfaz: Abra en su navegador: http://127.0.0.1:8000/docsProbar: Click en POST /ocr -> Try it out -> Cargar imagen (data/nube_uni_bi.jpg) -> Execute. Recibirá un JSON detallado con el texto extraído y metadatos del proceso.🛠️ 3. Requisitos de SoftwareSO: Windows 10/11 (Arquitectura de 64 bits).Lenguaje: Python 3.10 o superior.Motor Externo: Tesseract OCR v5.0+ instalado en C:\Program Files\Tesseract-OCR.Nota: Durante la instalación de Tesseract, es crucial marcar la opción "Additional language data -> Spanish".🧠 4. Lógica del Pipeline OCREl sistema no es un simple wrapper; aplica técnicas de Ciencia de Datos para optimizar la imagen antes de la inferencia:EtapaTécnicaPropósitoGrayscalecv2.COLOR_BGR2GRAYElimina ruido cromático.Gaussian Blurcv2.GaussianBlurSuaviza imperfecciones y texturas del fondo.Binarizacióncv2.THRESH_OTSUCalcula el umbral óptimo $t$ minimizando la varianza intraclase: $\sigma^2_w(t) = \omega_0(t)\sigma^2_0(t) + \omega_1(t)\sigma^2_1(t)$Inferenciaimage_to_stringReconocimiento de patrones con soporte de lenguaje spa.📂 5. Estructura del ProyectoPlaintextproyecto_ocr/
+├── data/               # Imágenes de prueba y carpeta de uploads
 ├── src/                # Código fuente del sistema
-│   ├── ocr_pipeline.py # Lógica de procesamiento y configuración
-│   └── inferencia.py   # Script de ejecución por consola
-├── requirements.txt    # Dependencias del proyecto
+│   ├── ocr_pipeline.py # Corazón del procesamiento (CV2 + Tesseract)
+│   └── api.py          # Implementación de FastAPI y respuestas JSON
+├── inferencia.py       # Wrapper de consola (CLI) para ejecución raíz
+├── requirements.txt    # Dependencias (FastAPI, OpenCV, etc.)
 └── README.md           # Documentación técnica
-Autores:  Jorge Bravo, Manuel Caro, Fredy Alejandro Sarmiento Torres
+🆘 6. Solución de Problemas (Troubleshooting)Error: Failed loading language 'spa': Asegúrese de que el archivo spa.traineddata esté en C:\Program Files\Tesseract-OCR\tessdata. El script autoconfigura el TESSDATA_PREFIX para evitar este conflicto.Error: SyntaxError (Git Conflicts): Este repositorio ha sido saneado de marcas de conflicto (<<<< HEAD). Asegúrese de tener la última versión de la rama main.Conflicto con Anaconda: Si usa Conda, asegúrese de desactivar el entorno base (conda deactivate) antes de activar el venv para evitar discrepancias de versiones de Python.

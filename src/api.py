@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse
 import shutil
 import os
 import uuid
+from datetime import datetime
 from .ocr_pipeline import ejecutar_ocr
 
 # Configuración de la aplicación con metadatos profesionales
@@ -49,7 +50,7 @@ async def ocr_endpoint(file: UploadFile = File(...)):
             "metadata": {
                 "filename": file.filename,
                 "status": "success",
-                "processed_at": uuid.uuid1()
+                "processed_at": datetime.now().isoformat()  # Formato de tiempo profesional ISO 8601
             },
             "analysis": {
                 "engine": "Tesseract OCR v5.0",

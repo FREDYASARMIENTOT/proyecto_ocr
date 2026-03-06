@@ -1,51 +1,75 @@
+import cv2
+import pytesseract
 import os
+import logging
+import numpy as np
+from typing import Optional
 
-# ensure required packages are available and provide a helpful
-# error message if the wrong interpreter is used (e.g. conda base).
-try:
-    import cv2
-    import pytesseract
-except ImportError as exc:
-    missing = exc.name if hasattr(exc, 'name') else str(exc)
-    raise ImportError(
-        f"Error importing '{missing}'. "
-        "¿Está activado el entorno virtual correcto? "
-        "Ejecute 'pip install -r requirements.txt' en el venv."
-    ) from exc
+# Configuración de logs para trazabilidad profesional
+logging.basicConfig(
+    level=logging.INFO, 
+    format='%(asctime)s - %(levelname)s - [Pipeline OCR] - %(message)s'
+)
 
-# 1. PURGA INTERNA: Obligamos a Python a olvidar rutas viejas
-os.environ.pop('TESSDATA_PREFIX', None)
-
-# 2. CONFIGURACIÓN LIMPIA (Arquitectura 64 bits)
+# Configuración de rutas del motor Tesseract (Windows)
 ruta_base = r'C:\Program Files\Tesseract-OCR'
-# Usamos os.path.normpath para evitar el error de las comillas y barras mezcladas
-ruta_tessdata = os.path.normpath(os.path.join(ruta_base, 'tessdata'))
-
 pytesseract.pytesseract.tesseract_cmd = os.path.join(ruta_base, 'tesseract.exe')
-os.environ['TESSDATA_PREFIX'] = ruta_tessdata
+os.environ['TESSDATA_PREFIX'] = os.path.join(ruta_base, 'tessdata')
 
-def preprocesar_imagen(ruta_imagen):
-    """Mejora la imagen para el taller (Criterio: Calidad de resultados)"""
+def verificar_motor() -> bool:
+    """Valida la integridad y existencia del binario de Tesseract antes de la ejecución."""
+    if not os.path.exists(pytesseract.pytesseract.tesseract_cmd):
+        logging.error(f"Binario crítico no encontrado en: {ruta_base}")
+        return False
+    return True
+
+def preprocesar_imagen(ruta_imagen: str) -> np.ndarray:
+    """
+    Aplica una secuencia de técnicas de Visión Artificial para maximizar la legibilidad:
+    1. Conversión a escala de grises.
+    2. Suavizado gaussiano para atenuar ruido de alta frecuencia.
+    3. Binarización Global de Otsu.
+    """
     imagen = cv2.imread(ruta_imagen)
     if imagen is None:
-        raise FileNotFoundError(f"No se encontró la imagen: {ruta_imagen}")
+        raise FileNotFoundError(f"La matriz de imagen no pudo ser cargada desde: {ruta_imagen}")
     
+    # 1. Eliminación de información cromática (Grayscale)
     gris = cv2.cvtColor(imagen, cv2.COLOR_BGR2GRAY)
-    _, binarizada = cv2.threshold(gris, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    
+    # 2. Reducción de ruido espacial (Filtro Gaussiano 5x5)
+    # Vital para evitar que imperfecciones del fondo afecten el cálculo de varianza de Otsu
+    blur = cv2.GaussianBlur(gris, (5, 5), 0)
+    
+    # 3. Binarización Adaptativa (Otsu)
+    _, binarizada = cv2.threshold(blur, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+    
+    logging.info(f"Fase de preprocesamiento completada para: {os.path.basename(ruta_imagen)}")
     return binarizada
 
-def ejecutar_ocr(ruta_imagen, lenguaje='spa'):
-    """Ejecuta el pipeline (Criterio: Funcionamiento 30%)"""
+def ejecutar_ocr(ruta_imagen: str, lenguaje: str = 'spa') -> str:
+    """
+    Orquesta el pipeline completo: desde la carga de la imagen hasta la inferencia de texto.
+    """
+    if not verificar_motor():
+        raise EnvironmentError("El sistema no cuenta con las dependencias del motor OCR.")
+
     try:
-        img = preprocesar_imagen(ruta_imagen)
-        # IMPORTANTE: No pasamos 'config' con rutas manuales para evitar el error de comillas
-        texto = pytesseract.image_to_string(img, lang=lenguaje)
+        # Etapa 1: Visión Artificial
+        img_procesada = preprocesar_imagen(ruta_imagen)
+        
+        # Etapa 2: Inferencia de Patrones
+        # OEM 3: Default, PSM 3: Fully automatic page segmentation
+        config_custom = r'--oem 3 --psm 3'
+        
+        texto = pytesseract.image_to_string(img_procesada, lang=lenguaje, config=config_custom)
+        
+        if not texto.strip():
+            logging.warning("La inferencia finalizó, pero no se detectaron caracteres estructurados.")
+            
+        logging.info("Extracción de texto ejecutada exitosamente.")
         return texto.strip()
+        
     except Exception as e:
-        return f"Error crítico: {str(e)}"
-
-
-if __name__ == "__main__":
-    # informe sencillo cuando alguien intenta ejecutar este módulo directamente
-    print("Este módulo implementa la lógica OCR y no debe ejecutarse por sí mismo.")
-    print("Utilice 'python inferencia.py --imagen <ruta>' desde la raíz del proyecto.")
+        logging.error(f"Excepción controlada durante la inferencia: {str(e)}")
+        raise RuntimeError(f"Fallo en el pipeline de procesamiento: {str(e)}")
